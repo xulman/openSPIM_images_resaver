@@ -1,5 +1,5 @@
 #@File (label="Directory with files:", style="directory") wrkDir
-#@String (label="renaming instructions file:", default="renamings.txt") renameFileName
+#@String (label="Renaming instructions file:", value="renamings.txt") renameFileName
 
 # the file names are understood to consist of three sections:
 # common prefix, then middle section like _channelX_..._positionY_viewZ, and _timeT_zZ.tif postfix
@@ -10,9 +10,9 @@ patternWhatFilesToCareAboutOnly = ".tif"
 # =======================================================================================
 import os.path
 
-#renamingFile = wrkDir.getAbsolutePath() + os.path.sep + renameFileName
-renamingFile = "/temp/Johannes/tstFolder/renaming.txt"
-wrkDirStr = "/temp/Johannes/tstFolder"
+wrkDirStr = wrkDir.getAbsolutePath()
+renamingFile = wrkDirStr + os.path.sep + renameFileName
+
 
 # fetch the list of all files in the wrkDirStr directory
 allFiles = ""
@@ -38,6 +38,6 @@ print(middleSections)
 
 outFile = open(renamingFile,"w")
 for m in sorted(middleSections):
-	outFile.write(f"{m} -> {m}\n")
+	outFile.write(m + " -> " + m + "\n")
 outFile.close()
-print(f"were written into a file: {renamingFile}")
+print("were written into a file: " + renamingFile)
