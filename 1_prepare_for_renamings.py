@@ -13,6 +13,9 @@ import os.path
 wrkDirStr = wrkDir.getAbsolutePath()
 renamingFile = wrkDirStr + os.path.sep + renameFileName
 
+##xx## #@String (label="zStacking instructions file:", value="zStacks.txt") zStacksFileName
+# zStackFile = wrkDirStr + os.path.sep + zStacksFileName
+
 
 # fetch the list of all files in the wrkDirStr directory
 allFiles = ""
@@ -22,22 +25,71 @@ for rootDir,dirs,files in os.walk(wrkDirStr, topdown = True):
     break
 #print(f"all detected files={allFiles}")
 
-# reduce the list to only wanted files, then extract all observed middle sections
+
+def extractItemValue(filename, itempattern):
+    idx = filename.find(itempattern)
+    if idx == -1:
+        # not found the field (e.g. _z000)
+        return -1
+
+    idx += len(itempattern)
+    digits = 1
+    while filename[idx:idx+digits].isdigit():
+        digits += 1
+    digits -= 1 # the last functional before the condition broke
+
+    if digits == 0:
+        # not found _z000 field
+        return -1
+
+    return int(filename[idx:idx+digits])
+
+
+# reduce the list to only wanted files, then extract
+# all observed middle sections and their z-spans
 middleSections = set()
+zSmallest = dict() # default: 99999
+zHighest = dict()  # default: -1
+
 for file in allFiles:
+    # a wanted file?
     if not file.endswith(patternWhatFilesToCareAboutOnly):
         continue
+
     midIdx = file.find(patternHowMiddleSectionStarts)
     lstIdx = file.find(patternHowLastSectionStarts)
     # were the sections detected at all?
-    if midIdx > -1 and lstIdx > midIdx:
-        midStr = file[midIdx:lstIdx]
-        middleSections.add(midStr)
-print("all observed middle sections:")
-print(middleSections)
+    if midIdx == -1 or lstIdx <= midIdx:
+        print("Warning: " + file + " with not explicit middle section was skipped!")
+        continue
+
+    midStr = file[midIdx:lstIdx]
+    middleSections.add(midStr)
+
+    # what is the z-index in this file? ...and for this pattern
+    zVal = extractItemValue(file, "_z")
+    zSmall = zSmallest.get(midStr, 99999)
+    if zVal < zSmall:
+        zSmallest[midStr] = zVal
+    zHigh = zHighest.get(midStr, -1)
+    if zVal > zHigh:
+        zHighest[midStr] = zVal
+
+print("All observed middle sections:")
+for m in middleSections:
+    print(m+" with z-span of "+str(zSmallest[m])+" - "+str(zHighest[m]))
 
 outFile = open(renamingFile,"w")
 for m in sorted(middleSections):
     outFile.write(m + " -> " + m + "\n")
 outFile.close()
 print("were written into a file: " + renamingFile)
+
+# print("Observed z-slices interval: "+str(zSmallest)+" -> "+str(zHighest))
+# outFile = open(zStackFile,"w")
+# outFile.write("Prepend empty: 0\n")
+# outFile.write("Combine from: "+str(zSmallest)+"\n")
+# outFile.write("Combine till: "+str(zHighest)+"\n")
+# outFile.write("Append empty: 0\n")
+# outFile.close()
+# print("zStacks plan was written into a file: " + zStackFile)
