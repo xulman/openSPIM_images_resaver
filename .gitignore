@@ -1,3 +1,8 @@
+testData
+.*.sw?
+
+
+### template for Python from GIT ###
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
