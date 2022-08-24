@@ -84,12 +84,3 @@ for m in sorted(middleSections):
     outFile.write(m + " -> " + m + "\n")
 outFile.close()
 print("were written into a file: " + renamingFile)
-
-# print("Observed z-slices interval: "+str(zSmallest)+" -> "+str(zHighest))
-# outFile = open(zStackFile,"w")
-# outFile.write("Prepend empty: 0\n")
-# outFile.write("Combine from: "+str(zSmallest)+"\n")
-# outFile.write("Combine till: "+str(zHighest)+"\n")
-# outFile.write("Append empty: 0\n")
-# outFile.close()
-# print("zStacks plan was written into a file: " + zStackFile)

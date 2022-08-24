@@ -11,6 +11,10 @@ patternWhatFilesToCareAboutOnly = ".tif"
 
 # =======================================================================================
 import os.path
+from ij import IJ
+import ij.ImagePlus
+import ij.ImageStack
+from ij.process import ShortProcessor
 
 wrkDirStr = wrkDir.getAbsolutePath()
 outDirStr = outDir.getAbsolutePath()
@@ -64,7 +68,8 @@ for file in allFiles:
     lstIdx = file.find(patternHowLastSectionStarts)
     # were the sections detected at all?
     if midIdx == -1 or lstIdx <= midIdx:
-        print("Warning: " + file + " with not explicit middle section was skipped!")
+        # don't warn yet... will come over this image again later (and would warn then)
+        # print("Warning: " + file + " with not explicit middle section was skipped!")
         continue
 
     midStr = file[midIdx:lstIdx]
@@ -95,11 +100,14 @@ mapFile.close()
 
 print("Considering the following renaming map:")
 for m in renameMap:
-    print(m+" -> "+renameMap[m]+"  with z-span of "+str(zSmallest[m])+" - "+str(zHighest[m]))
-print("")
+    nm = renameMap.get(m,"not found")
+    zs = str(zSmallest.get(m,"N/A"))
+    zh = str(zHighest.get(m,"N/A"))
+    print(m+" -> "+nm+"  with z-span of "+zs+" - "+zh)
+print("And the largest z-slice index in the folder was found "+str(zHighestOverall)+"\n")
 
 
-def combineAllFilesMatching(allFilesInFolder, requiredPattern, outputPattern):
+def combineAllFilesMatching(allFilesInFolder, inputFolderPath, requiredPattern):
     global zSmallest
     global zHighest
     global zHighestOverall
@@ -115,8 +123,10 @@ def combineAllFilesMatching(allFilesInFolder, requiredPattern, outputPattern):
         visitedTimepoints.add(timeRef)
 
         # okay, we're now doing 'timeRef' timepoint (of this 'requiredPattern')
-        print("stacking: "+requiredPattern+" at time "+str(timeRef))
+        print("Stacking: "+requiredPattern+" at time "+str(timeRef))
         zSlicesFiles = dict()
+        firstFile = None
+        firstFileZ = 99999
         for fileNow in allFilesInFolder:
             if not isMatchingPattern(fileNow, requiredPattern):
                 continue
@@ -128,18 +138,40 @@ def combineAllFilesMatching(allFilesInFolder, requiredPattern, outputPattern):
             z = extractItemValue(fileNow, "_z")
             if z < zSmallest[requiredPattern] or z > zHighest[requiredPattern]:
                 continue
-
             zSlicesFiles[z] = fileNow
 
+            if firstFile is None or z < firstFileZ:
+                firstFile = fileNow
+                firstFileZ = z
+
         # now, all available files are identified, let's build the stack
-        # zSlicesFiles.first to read the first slice to get an idea of the XY sizes
+        designationOfEmptySlice = "empty slice"
+        print("using this plan:")
         for z in range(zHighestOverall+1):
-            file = zSlicesFiles.get(z,"fake")
-            print("z="+str(z)+" from file "+file)
-        print("-------------")
+            file = zSlicesFiles.get(z,designationOfEmptySlice)
+            print("z="+str(z)+" from file: "+file)
 
+        imgSlicePath = inputFolderPath + os.path.sep + firstFile
+        imgSlice = IJ.openImage(imgSlicePath)
+        if imgSlice is None:
+            print("Couldn't actually open "+firstFile+", strange, bailing out...")
+            return None
+        imgStack = ij.ImageStack(imgSlice.getWidth(), imgSlice.getHeight())
 
+        for z in range(zHighestOverall+1):
+            file = zSlicesFiles.get(z,designationOfEmptySlice)
+            if file is designationOfEmptySlice:
+                # add the one-shared empty slice
+                imgStack.addSlice( ShortProcessor(imgSlice.getWidth(), imgSlice.getHeight()) )
+            else:
+                # take from the disk
+                if file != firstFile:
+                    imgSlicePath = inputFolderPath + os.path.sep + file
+                    imgSlice = IJ.openImage(imgSlicePath)
+                imgStack.addSlice( imgSlice.getProcessor() )
+                imgSlice.close()
 
+        return imgStack
 
 
 # reduce the list to only wanted files, then do the renaming
@@ -166,16 +198,20 @@ for file in allFiles:
         print("Warning: " + file + " with unknown middle section " + midStr + " was skipped!")
         continue
 
-    combineAllFilesMatching(allFiles, midStr, newMidStr)
+    newStack = combineAllFilesMatching(allFiles, wrkDirStr, midStr)
+    if newStack is None:
+        print("Error while processing '"+midStr+"', moving to another...")
+        print("-------------")
+        continue
 
+    newFileName = file[0:midIdx] + newMidStr + file[lstIdx:]
+    outFile = outDirStr + os.path.sep + newFileName
 
-#    newFile = file[0:midIdx] + newMidStr + file[lstIdx:]
-#    if not dryRun:
-#        print("renaming: "+file+" -> "+newFile)
-#
-#    inFile  = wrkDirStr + os.path.sep + file
-#    outFile = outDirStr + os.path.sep + newFile
-#    if dryRun:
-#        print("NOT moving "+inFile+" to "+outFile)
-#    else:
-#        shutil.move(inFile,outFile)
+    imgFinal = ij.ImagePlus(newFileName, newStack)
+    if dryRun:
+        print("only showing now but would have saved as "+outFile)
+        imgFinal.show()
+    else:
+        IJ.save(imgFinal, outFile)
+        #imgFinal.close() ??
+    print("-------------")
