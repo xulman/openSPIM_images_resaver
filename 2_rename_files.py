@@ -90,6 +90,8 @@ for file in allFiles:
 renameMap = dict()
 mapFile = open(renamingFile,"r")
 for pair in mapFile:
+    if pair.startswith('#'):
+        continue
     sepIdx = pair.find("->")
     if sepIdx == -1:
         continue

@@ -80,7 +80,16 @@ for m in middleSections:
     print(m+" with z-span of "+str(zSmallest[m])+" - "+str(zHighest[m]))
 
 outFile = open(renamingFile,"w")
+outFile.write("# A quick help here:\n")
+outFile.write("# Each line represents one discovered pattern, one combination.\n")
+outFile.write("# The lines are organized as 'leftSide' -> 'rightSide'.\n")
+outFile.write("# 'leftSide' you should not change, the program uses it to match/find the right files.\n")
+outFile.write("# 'rightSide' you should change to how you prefer to have the combination actually named.\n")
+outFile.write("# 'rightSide' must include a special term 'TIME3'.\n")
+outFile.write("# 'TIME3' is a placeholder where time information will be printed in the file name.\n")
+outFile.write("# 'TIME3' says that the time information will be printed using (at least) 3 digits, zero padded.\n")
+outFile.write("#\n")
 for m in sorted(middleSections):
-    outFile.write(m + " -> " + m + "\n")
+    outFile.write(m + " -> " + m + "_timeTIME3\n")
 outFile.close()
 print("were written into a file: " + renamingFile)
