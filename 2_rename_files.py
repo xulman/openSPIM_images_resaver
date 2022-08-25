@@ -1,5 +1,5 @@
 #@File (label="Directory with original files:", style="directory") wrkDir
-#@String (label="Renaming instructions file:", value="renamings.txt") renameFileName
+#@String (label="Renaming instructions file:", value="renaming.txt") renameFileName
 #@File (label="Directory with renamed files:", style="directory") outDir
 #@Boolean (label="Dry run, no renaming now:", value="True") dryRun
 
@@ -86,7 +86,7 @@ for file in allFiles:
             zHighestOverall = zVal
 
 
-# fetch the renamings map
+# fetch the renaming map
 renameMap = dict()
 mapFile = open(renamingFile,"r")
 for pair in mapFile:

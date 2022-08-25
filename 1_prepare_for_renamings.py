@@ -1,5 +1,5 @@
 #@File (label="Directory with files:", style="directory") wrkDir
-#@String (label="Renaming instructions file:", value="renamings.txt") renameFileName
+#@String (label="Renaming instructions file:", value="renaming.txt") renameFileName
 
 # the file names are understood to consist of three sections:
 # common prefix, then middle section like _channelX_..._positionY_viewZ, and _timeT_zZ.tif postfix
