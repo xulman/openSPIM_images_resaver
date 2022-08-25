@@ -147,6 +147,7 @@ def saveStack(stackObj, fileNamePrefix, originalPattern, timepoint):
         print("only showing now but would have saved as "+outFile)
         imgFinal.show()
     else:
+        print("saving: "+outFile)
         IJ.save(imgFinal, outFile)
 
 
