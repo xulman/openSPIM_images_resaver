@@ -109,6 +109,29 @@ for m in renameMap:
 print("And the largest z-slice index in the folder was found "+str(zHighestOverall)+"\n")
 
 
+def replaceTimePlaceholder(msg, timeValue):
+    idx = msg.find("{")
+    if idx == -1:
+        return msg+"_tp"+str(timeValue)
+
+    dIdx = idx + 1
+    digits = 1
+    while msg[dIdx:dIdx+digits].isdigit() and dIdx+digits <= len(msg):
+        digits += 1
+    digits -= 1
+
+    if digits == 0:
+        return msg+"_tp"+str(timeValue)
+
+    width = int(msg[dIdx:dIdx+digits])
+
+    timeStr = str(timeValue)
+    if len(timeStr) < width:
+        timeStr = ("0000000000000000000"+timeStr)[-width:]
+
+    return msg[:idx] + timeStr + msg[dIdx+digits+1:]
+
+
 def combineAllFilesMatching(allFilesInFolder, inputFolderPath, requiredPattern):
     global zSmallest
     global zHighest
@@ -199,6 +222,7 @@ for file in allFiles:
     if newMidStr is None:
         print("Warning: " + file + " with unknown middle section " + midStr + " was skipped!")
         continue
+    newMidStr = replaceTimePlaceholder(newMidStr, 0)
 
     newStack = combineAllFilesMatching(allFiles, wrkDirStr, midStr)
     if newStack is None:
@@ -206,7 +230,7 @@ for file in allFiles:
         print("-------------")
         continue
 
-    newFileName = file[0:midIdx] + newMidStr + file[lstIdx:]
+    newFileName = file[0:midIdx] + newMidStr + patternWhatFilesToCareAboutOnly
     outFile = outDirStr + os.path.sep + newFileName
 
     imgFinal = ij.ImagePlus(newFileName, newStack)
