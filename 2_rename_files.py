@@ -132,6 +132,24 @@ def replaceTimePlaceholder(msg, timeValue):
     return msg[:idx] + timeStr + msg[dIdx+digits+1:]
 
 
+def saveStack(stackObj, fileNamePrefix, originalPattern, timepoint):
+    global patternWhatFilesToCareAboutOnly
+    global outDirStr
+    global renameMap
+    global dryRun
+
+    newMidStr = replaceTimePlaceholder(renameMap[originalPattern], timepoint)
+    newFileName = fileNamePrefix + newMidStr + patternWhatFilesToCareAboutOnly
+    outFile = outDirStr + os.path.sep + newFileName
+
+    imgFinal = ij.ImagePlus(newFileName, stackObj)
+    if dryRun:
+        print("only showing now but would have saved as "+outFile)
+        imgFinal.show()
+    else:
+        IJ.save(imgFinal, outFile)
+
+
 def combineAllFilesMatching(allFilesInFolder, inputFolderPath, requiredPattern):
     global zSmallest
     global zHighest
@@ -179,8 +197,8 @@ def combineAllFilesMatching(allFilesInFolder, inputFolderPath, requiredPattern):
         imgSlicePath = inputFolderPath + os.path.sep + firstFile
         imgSlice = IJ.openImage(imgSlicePath)
         if imgSlice is None:
-            print("Couldn't actually open "+firstFile+", strange, bailing out...")
-            return None
+            print("Couldn't actually open "+firstFile+", skipping this ("+str(timeRef)+") timepoint...")
+            continue
         imgStack = ij.ImageStack(imgSlice.getWidth(), imgSlice.getHeight())
 
         for z in range(zHighestOverall+1):
@@ -196,7 +214,7 @@ def combineAllFilesMatching(allFilesInFolder, inputFolderPath, requiredPattern):
                 imgStack.addSlice( imgSlice.getProcessor() )
                 imgSlice.close()
 
-        return imgStack
+        saveStack(imgStack, fileRef[0:midIdx], requiredPattern, timeRef)
 
 
 # reduce the list to only wanted files, then do the renaming
@@ -222,22 +240,7 @@ for file in allFiles:
     if newMidStr is None:
         print("Warning: " + file + " with unknown middle section " + midStr + " was skipped!")
         continue
-    newMidStr = replaceTimePlaceholder(newMidStr, 0)
 
-    newStack = combineAllFilesMatching(allFiles, wrkDirStr, midStr)
-    if newStack is None:
-        print("Error while processing '"+midStr+"', moving to another...")
-        print("-------------")
-        continue
-
-    newFileName = file[0:midIdx] + newMidStr + patternWhatFilesToCareAboutOnly
-    outFile = outDirStr + os.path.sep + newFileName
-
-    imgFinal = ij.ImagePlus(newFileName, newStack)
-    if dryRun:
-        print("only showing now but would have saved as "+outFile)
-        imgFinal.show()
-    else:
-        IJ.save(imgFinal, outFile)
-        #imgFinal.close() ??
+    combineAllFilesMatching(allFiles, wrkDirStr, midStr)
     print("-------------")
+
