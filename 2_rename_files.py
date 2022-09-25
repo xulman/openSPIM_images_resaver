@@ -144,7 +144,7 @@ class OneFolder:
             print("Warning: " + self.renamingFile + " couldn't be opened, skipping this folder.")
             return
 
-        print("Considering the following renaming map:")
+        print("Considering here the following renaming map:")
         for m in self.renameMap:
             nm = self.renameMap.get(m,"not found")
             zs = str(self.zSmallest.get(m,"N/A"))
