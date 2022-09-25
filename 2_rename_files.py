@@ -2,6 +2,11 @@
 #@String (label="Renaming instructions file:", value="renaming.txt") renameFileName
 
 #@File (label="Directory with renamed files:", style="directory") outDir
+
+#@float (label="Voxel width (length along x-axis):", stepSize="0.5") xRes
+#@float (label="Voxel height (length along y-axis):", stepSize="0.5") yRes
+#@float (label="Voxel depth (length along z-axis):", stepSize="0.5") zRes
+
 #@Boolean (label="Dry run, no renaming now:", value="True") dryRun
 
 # the file names are understood to consist of three sections:
@@ -243,6 +248,7 @@ class OneFolder:
         outFile = self.outDirStr + os.path.sep + newFileName
 
         self.imgFinal = ij.ImagePlus(newFileName, stackObj)
+        IJ.run(self.imgFinal,"Properties...","unit=um pixel_width="+str(xRes)+" pixel_height="+str(yRes)+" voxel_depth="+str(zRes))
         if dryRun:
             print("Only showing now, but would have saved as: "+outFile)
             self.imgFinal.show()
