@@ -97,7 +97,7 @@ def processOneFolder(wrkDirStr):
 inFileStr = inFile.getAbsolutePath()
 wrkDirStr = os.path.dirname(inFileStr)
 
-folders = open(inFileStr, "r")
-for folder in folders:
+folderFile = open(inFileStr, "r")
+for folder in folderFile:
     processOneFolder(wrkDirStr + os.path.sep + folder.rstrip())
-folders.close()
+folderFile.close()
