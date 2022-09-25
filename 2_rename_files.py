@@ -8,7 +8,7 @@
 #@float (label="Voxel height (length along y-axis):", stepSize="0.5") yRes
 #@float (label="Voxel depth (length along z-axis):", stepSize="0.5") zRes
 
-#@Boolean (label="Dry run, no renaming now:", value="True") dryRun
+#@String (label="Operation mode:", choices={"Test run -- only prints reports","Test run -- reports and shows stacks","Save only MIPs","Save only stacks","Save MIPs and stacks"}) outputMode
 
 # the file names are understood to consist of three sections:
 # common prefix, then middle section like _channelX_..._positionY_viewZ, and _timeT_zZ.tif postfix
@@ -144,7 +144,7 @@ class OneFolder:
             print("Warning: " + self.renamingFile + " couldn't be opened, skipping this folder.")
             return
 
-        print("Considering the following renaming map:")
+        print("Considering here the following renaming map:")
         for m in self.renameMap:
             nm = self.renameMap.get(m,"not found")
             zs = str(self.zSmallest.get(m,"N/A"))
@@ -202,6 +202,13 @@ class OneFolder:
                 continue
             imgStack = ij.ImageStack(imgSlice.getWidth(), imgSlice.getHeight())
 
+            imgMIP = ij.ImageStack(imgSlice.getWidth(), imgSlice.getHeight())
+            imgMIP_processor = ShortProcessor(imgSlice.getWidth(), imgSlice.getHeight())
+            imgMIP.addSlice(imgMIP_processor)
+            imgMIP_pixels = imgMIP_processor.getPixels()
+            for pidx in range(len(imgMIP_pixels)):
+                imgMIP_pixels[pidx] = 0
+
             for z in range(self.zHighestOverall+1):
                 file = zSlicesFiles.get(z,designationOfEmptySlice)
                 if file is designationOfEmptySlice:
@@ -213,9 +220,16 @@ class OneFolder:
                         imgSlicePath = self.wrkDirStr + os.path.sep + file
                         imgSlice = IJ.openImage(imgSlicePath)
                     imgStack.addSlice( imgSlice.getProcessor() )
+                    #
+                    # do MIP:
+                    pixels = imgSlice.getProcessor().getPixels()
+                    for pidx in range(len(imgMIP_pixels)):
+                        if pixels[pidx] > imgMIP_pixels[pidx]:
+                            imgMIP_pixels[pidx] = pixels[pidx]
+                    #
                     imgSlice.close()
 
-            self.saveStack(imgStack, fileNamePrefix, requiredPattern, timeRef)
+            self.saveImages(imgStack, imgMIP, fileNamePrefix, requiredPattern, timeRef)
     # end of combineAllFilesMatching()
 
 
@@ -255,8 +269,8 @@ class OneFolder:
     # end of run()
 
 
-    def saveStack(self, stackObj, fileNamePrefix, originalPattern, timepoint):
-        global dryRun
+    def saveImages(self, stackObj, mipObj, fileNamePrefix, originalPattern, timepoint):
+        global outputMode
         global outputTime
 
         absoluteTimepoint = timepoint - self.tSmallest + outputTime
@@ -264,17 +278,28 @@ class OneFolder:
         newMidStr = replaceTimePlaceholder(self.renameMap[originalPattern], absoluteTimepoint)
         newFileName = fileNamePrefix + newMidStr + patternWhatFilesToCareAboutOnly
         outFile = self.outDirStr + os.path.sep + newFileName
+        outMipFile = self.outDirStr + os.path.sep + "MIP" + os.path.sep + newFileName
 
-        self.imgFinal = ij.ImagePlus(newFileName, stackObj)
-        IJ.run(self.imgFinal,"Properties...","unit=um pixel_width="+str(xRes)+" pixel_height="+str(yRes)+" voxel_depth="+str(zRes))
-        if dryRun:
-            print("Only showing now, but would have saved as: "+outFile)
-            self.imgFinal.show()
-        else:
+        if outputMode.find("stacks") > -1:
+            self.imgFinal = ij.ImagePlus(newFileName, stackObj)
+            IJ.run(self.imgFinal,"Properties...","unit=um pixel_width="+str(xRes)+" pixel_height="+str(yRes)+" voxel_depth="+str(zRes))
+
+        if outputMode.find("Test") > -1:
+            print("Only reporting now that would have saved as: "+outFile)
+            if outputMode.find("show") > -1:
+                self.imgFinal.show()
+            return
+
+        if outputMode.find("stacks") > -1:
             print("Saving: "+outFile)
             IJ.save(self.imgFinal, outFile)
-    # end of saveStack()
 
+        if outputMode.find("MIP") > -1:
+            self.imgMipFinal = ij.ImagePlus(newFileName, mipObj)
+            IJ.run(self.imgMipFinal,"Properties...","unit=um pixel_width="+str(xRes)+" pixel_height="+str(yRes)+" voxel_depth="+str(zRes))
+            print("Saving: "+outMipFile)
+            IJ.save(self.imgMipFinal, outMipFile)
+    # end of saveImages()
 
 
 
@@ -290,7 +315,7 @@ for folder in folderFile:
 folderFile.close()
 
 wrkDirStr = os.path.dirname(inFileStr)
-outDirStr = outDir.getAbsolutePath() #TODO how is this done in the older?
+outDirStr = outDir.getAbsolutePath()
 
 Folders = []
 for folder in folders:
@@ -309,5 +334,11 @@ if globalHighestZ == -1:
     print("Found no usable data to process, stopping now.")
 else:
     print("\nThe largest z-slice index over all folders was found "+str(globalHighestZ))
+
+    outMIPDirStr = outDirStr+os.path.sep+"MIP"+os.path.sep
+    if outputMode.find("MIP") > -1 and not os.path.isdir(outMIPDirStr):
+        print("Creating MIP output folder: "+outMIPDirStr)
+        os.makedirs(outMIPDirStr)
+
     for F in Folders:
         F.run()
