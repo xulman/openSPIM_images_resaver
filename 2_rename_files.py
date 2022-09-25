@@ -197,7 +197,7 @@ class OneFolder:
                     imgStack.addSlice( imgSlice.getProcessor() )
                     imgSlice.close()
 
-            saveStack(imgStack, fileNamePrefix, requiredPattern, timeRef)
+            self.saveStack(imgStack, fileNamePrefix, requiredPattern, timeRef)
     # end of combineAllFilesMatching()
 
 
@@ -226,7 +226,7 @@ class OneFolder:
                 print("Warning: " + file + " with unknown middle section " + midStr + " was skipped!")
                 continue
 
-            combineAllFilesMatching(file[0:midIdx], midStr)
+            self.combineAllFilesMatching(file[0:midIdx], midStr)
             print("-------------")
     # end of run()
 
