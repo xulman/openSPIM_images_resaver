@@ -215,7 +215,7 @@ class OneFolder:
                     imgStack.addSlice( imgSlice.getProcessor() )
                     imgSlice.close()
 
-            self.saveStack(imgStack, fileNamePrefix, requiredPattern, timeRef)
+            self.saveImages(imgStack, None, fileNamePrefix, requiredPattern, timeRef)
     # end of combineAllFilesMatching()
 
 
@@ -255,7 +255,7 @@ class OneFolder:
     # end of run()
 
 
-    def saveStack(self, stackObj, fileNamePrefix, originalPattern, timepoint):
+    def saveImages(self, stackObj, mipObj, fileNamePrefix, originalPattern, timepoint):
         global dryRun
         global outputTime
 
@@ -273,8 +273,8 @@ class OneFolder:
         else:
             print("Saving: "+outFile)
             IJ.save(self.imgFinal, outFile)
-    # end of saveStack()
 
+    # end of saveImages()
 
 
 
