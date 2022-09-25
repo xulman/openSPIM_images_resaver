@@ -202,6 +202,13 @@ class OneFolder:
                 continue
             imgStack = ij.ImageStack(imgSlice.getWidth(), imgSlice.getHeight())
 
+            imgMIP = ij.ImageStack(imgSlice.getWidth(), imgSlice.getHeight())
+            imgMIP_processor = ShortProcessor(imgSlice.getWidth(), imgSlice.getHeight())
+            imgMIP.addSlice(imgMIP_processor)
+            imgMIP_pixels = imgMIP_processor.getPixels()
+            for pidx in range(len(imgMIP_pixels)):
+                imgMIP_pixels[pidx] = 0
+
             for z in range(self.zHighestOverall+1):
                 file = zSlicesFiles.get(z,designationOfEmptySlice)
                 if file is designationOfEmptySlice:
@@ -213,9 +220,16 @@ class OneFolder:
                         imgSlicePath = self.wrkDirStr + os.path.sep + file
                         imgSlice = IJ.openImage(imgSlicePath)
                     imgStack.addSlice( imgSlice.getProcessor() )
+                    #
+                    # do MIP:
+                    pixels = imgSlice.getProcessor().getPixels()
+                    for pidx in range(len(imgMIP_pixels)):
+                        if pixels[pidx] > imgMIP_pixels[pidx]:
+                            imgMIP_pixels[pidx] = pixels[pidx]
+                    #
                     imgSlice.close()
 
-            self.saveImages(imgStack, None, fileNamePrefix, requiredPattern, timeRef)
+            self.saveImages(imgStack, imgMIP, fileNamePrefix, requiredPattern, timeRef)
     # end of combineAllFilesMatching()
 
 
