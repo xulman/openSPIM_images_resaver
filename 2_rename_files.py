@@ -111,17 +111,21 @@ class OneFolder:
 
         # fetch the renaming map
         self.renameMap = dict()
-        mapFile = open(self.renamingFile,"r")
-        for pair in mapFile:
-            if pair.startswith('#'):
-                continue
-            sepIdx = pair.find("->")
-            if sepIdx == -1:
-                continue
-            fromStr = pair[0:sepIdx].strip()
-            toStr = pair[sepIdx+2:].strip()
-            self.renameMap[fromStr] = toStr
-        mapFile.close()
+        try:
+            mapFile = open(self.renamingFile,"r")
+            for pair in mapFile:
+                if pair.startswith('#'):
+                    continue
+                sepIdx = pair.find("->")
+                if sepIdx == -1:
+                    continue
+                fromStr = pair[0:sepIdx].strip()
+                toStr = pair[sepIdx+2:].strip()
+                self.renameMap[fromStr] = toStr
+            mapFile.close()
+        except IOError:
+            print("Warning: " + self.renamingFile + " couldn't be opened, skipping this folder.")
+            return
 
         print("Considering the following renaming map:")
         for m in self.renameMap:
@@ -262,7 +266,9 @@ outDirStr = outDir.getAbsolutePath() #TODO how is this done in the older?
 
 Folders = []
 for folder in folders:
-    Folders.append( OneFolder(wrkDirStr + os.path.sep + folder, outDirStr) )
+    OF = OneFolder(wrkDirStr + os.path.sep + folder, outDirStr)
+    if len(OF.renameMap) > 0: # non-emptiness indicates success
+        Folders.append(OF)
 
 # figure out z-max pairs
 globalHighestZ = -1
