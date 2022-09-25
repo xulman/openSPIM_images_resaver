@@ -66,6 +66,8 @@ def replaceTimePlaceholder(msg, timeValue):
 
 class OneFolder:
     def __init__(self, workFolder, outFolder):
+        print("==============================\n| Reading now folder: "+workFolder+"\n|")
+
         self.wrkDirStr = workFolder
         self.renamingFile = self.wrkDirStr + os.path.sep + renameFileName
         #
@@ -133,7 +135,7 @@ class OneFolder:
             zs = str(self.zSmallest.get(m,"N/A"))
             zh = str(self.zHighest.get(m,"N/A"))
             print(m+" -> "+nm+"  with z-span of "+zs+" - "+zh)
-        print("And the largest z-slice index in the folder was found "+str(self.zHighestOverall)+"\n")
+        print("And the largest z-slice index in the folder was found "+str(self.zHighestOverall))
     # end of __init__()
 
 
@@ -149,7 +151,7 @@ class OneFolder:
             visitedTimepoints.add(timeRef)
 
             # okay, we're now doing 'timeRef' timepoint (of this 'requiredPattern')
-            print("Stacking: "+requiredPattern+" at time "+str(timeRef))
+            print("==> Stacking: "+requiredPattern+" at time "+str(timeRef))
             zSlicesFiles = dict()
             firstFile = None
             firstFileZ = 99999
@@ -172,7 +174,7 @@ class OneFolder:
 
             # now, all available files are identified, let's build the stack
             designationOfEmptySlice = "empty slice"
-            print("using this plan:")
+            print("    using this plan:")
             for z in range(self.zHighestOverall+1):
                 file = zSlicesFiles.get(z,designationOfEmptySlice)
                 print("z="+str(z)+" from file: "+file)
@@ -202,6 +204,8 @@ class OneFolder:
 
 
     def run(self):
+        print("==============================\n| Stacking files now folder: "+self.wrkDirStr+"\n|")
+
         # reduce the list to only wanted files, then do the renaming
         visitedPatterns = set()
         for file in self.allFiles:
@@ -240,10 +244,10 @@ class OneFolder:
 
         self.imgFinal = ij.ImagePlus(newFileName, stackObj)
         if dryRun:
-            print("only showing now but would have saved as "+outFile)
+            print("Only showing now, but would have saved as: "+outFile)
             self.imgFinal.show()
         else:
-            print("saving: "+outFile)
+            print("Saving: "+outFile)
             IJ.save(self.imgFinal, outFile)
     # end of saveStack()
 
@@ -276,7 +280,10 @@ for F in Folders:
     globalHighestZ = F.zHighestOverall if F.zHighestOverall > globalHighestZ else globalHighestZ
 for F in Folders:
     F.zHighestOverall = globalHighestZ
-print("The largest z-slice index over all folders was found "+str(globalHighestZ)+"\n")
 
-for F in Folders:
-    F.run()
+if globalHighestZ == -1:
+    print("Found no usable data to process, stopping now.")
+else:
+    print("\nThe largest z-slice index over all folders was found "+str(globalHighestZ))
+    for F in Folders:
+        F.run()

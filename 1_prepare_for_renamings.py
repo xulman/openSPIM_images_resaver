@@ -31,7 +31,7 @@ def extractItemValue(filename, itempattern):
 
 
 def processOneFolder(wrkDirStr):
-    print("Analyzing now folder: "+wrkDirStr)
+    print("==============================\n| Analyzing now folder: "+wrkDirStr+"\n|")
 
     # fetch the list of all files in the wrkDirStr directory
     allFiles = ""
