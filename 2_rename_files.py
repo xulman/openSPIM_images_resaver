@@ -2,6 +2,7 @@
 #@String (label="Renaming instructions file:", value="renaming.txt") renameFileName
 
 #@File (label="Directory with renamed files:", style="directory") outDir
+#@int (label="First output time point:", default="0") outputTime
 
 #@float (label="Voxel width (length along x-axis):", stepSize="0.5") xRes
 #@float (label="Voxel height (length along y-axis):", stepSize="0.5") yRes
@@ -89,6 +90,8 @@ class OneFolder:
         self.zSmallest = dict() # default: 99999
         self.zHighest = dict()  # default: -1
         self.zHighestOverall = -1
+        self.tSmallest = 99999;
+        self.tHighest = -1;
 
         for file in self.allFiles:
             # a wanted file?
@@ -116,6 +119,13 @@ class OneFolder:
                 if zVal > self.zHighestOverall:
                     self.zHighestOverall = zVal
 
+            # what is the timepoint in this file?
+            tVal = extractItemValue(file, "_time")
+            if tVal < self.tSmallest:
+                self.tSmallest = tVal
+            if tVal > self.tHighest:
+                self.tHighest = tVal
+
         # fetch the renaming map
         self.renameMap = dict()
         try:
@@ -140,7 +150,8 @@ class OneFolder:
             zs = str(self.zSmallest.get(m,"N/A"))
             zh = str(self.zHighest.get(m,"N/A"))
             print(m+" -> "+nm+"  with z-span of "+zs+" - "+zh)
-        print("And the largest z-slice index in the folder was found "+str(self.zHighestOverall))
+        print("The largest z-slice index in the folder was found "+str(self.zHighestOverall))
+        print("And the widest time points span was found "+str(self.tSmallest)+" to "+str(self.tHighest))
     # end of __init__()
 
 
@@ -209,7 +220,9 @@ class OneFolder:
 
 
     def run(self):
-        print("==============================\n| Stacking files now folder: "+self.wrkDirStr+"\n|")
+        global outputTime
+        print("==============================\n| Stacking files now in folder: "
+            +self.wrkDirStr+"\n| from timepoint "+str(outputTime)+"\n|")
 
         # reduce the list to only wanted files, then do the renaming
         visitedPatterns = set()
@@ -237,13 +250,18 @@ class OneFolder:
 
             self.combineAllFilesMatching(file[0:midIdx], midStr)
             print("-------------")
+
+        outputTime += self.tHighest - self.tSmallest + 1;
     # end of run()
 
 
     def saveStack(self, stackObj, fileNamePrefix, originalPattern, timepoint):
         global dryRun
+        global outputTime
 
-        newMidStr = replaceTimePlaceholder(self.renameMap[originalPattern], timepoint)
+        absoluteTimepoint = timepoint - self.tSmallest + outputTime
+
+        newMidStr = replaceTimePlaceholder(self.renameMap[originalPattern], absoluteTimepoint)
         newFileName = fileNamePrefix + newMidStr + patternWhatFilesToCareAboutOnly
         outFile = self.outDirStr + os.path.sep + newFileName
 
