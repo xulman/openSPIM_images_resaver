@@ -8,7 +8,6 @@
 #@float (label="Voxel height (length along y-axis):", stepSize="0.5") yRes
 #@float (label="Voxel depth (length along z-axis):", stepSize="0.5") zRes
 
-#@Boolean (label="Dry run, no renaming now:", value="True") dryRun
 #@String (label="Operation mode:", choices={"Test run -- only prints reports","Test run -- reports and shows stacks","Save only MIPs","Save only stacks","Save MIPs and stacks"}) outputMode
 
 # the file names are understood to consist of three sections:
@@ -257,7 +256,7 @@ class OneFolder:
 
 
     def saveImages(self, stackObj, mipObj, fileNamePrefix, originalPattern, timepoint):
-        global dryRun
+        global outputMode
         global outputTime
 
         absoluteTimepoint = timepoint - self.tSmallest + outputTime
@@ -265,16 +264,27 @@ class OneFolder:
         newMidStr = replaceTimePlaceholder(self.renameMap[originalPattern], absoluteTimepoint)
         newFileName = fileNamePrefix + newMidStr + patternWhatFilesToCareAboutOnly
         outFile = self.outDirStr + os.path.sep + newFileName
+        outMipFile = self.outDirStr + os.path.sep + "MIP" + os.path.sep + newFileName
 
-        self.imgFinal = ij.ImagePlus(newFileName, stackObj)
-        IJ.run(self.imgFinal,"Properties...","unit=um pixel_width="+str(xRes)+" pixel_height="+str(yRes)+" voxel_depth="+str(zRes))
-        if dryRun:
-            print("Only showing now, but would have saved as: "+outFile)
-            self.imgFinal.show()
-        else:
+        if outputMode.find("stacks") > -1:
+            self.imgFinal = ij.ImagePlus(newFileName, stackObj)
+            IJ.run(self.imgFinal,"Properties...","unit=um pixel_width="+str(xRes)+" pixel_height="+str(yRes)+" voxel_depth="+str(zRes))
+
+        if outputMode.find("Test") > -1:
+            print("Only reporting now that would have saved as: "+outFile)
+            if outputMode.find("show") > -1:
+                self.imgFinal.show()
+            return
+
+        if outputMode.find("stacks") > -1:
             print("Saving: "+outFile)
             IJ.save(self.imgFinal, outFile)
 
+        if outputMode.find("MIP") > -1:
+            self.imgMipFinal = ij.ImagePlus(newFileName, mipObj)
+            IJ.run(self.imgMipFinal,"Properties...","unit=um pixel_width="+str(xRes)+" pixel_height="+str(yRes)+" voxel_depth="+str(zRes))
+            print("Saving: "+outMipFile)
+            IJ.save(self.imgMipFinal, outMipFile)
     # end of saveImages()
 
 
