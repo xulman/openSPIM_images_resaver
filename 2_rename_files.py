@@ -9,6 +9,7 @@
 #@float (label="Voxel depth (length along z-axis):", stepSize="0.5") zRes
 
 #@Boolean (label="Dry run, no renaming now:", value="True") dryRun
+#@String (label="Operation mode:", choices={"Test run -- only prints reports","Test run -- reports and shows stacks","Save only MIPs","Save only stacks","Save MIPs and stacks"}) outputMode
 
 # the file names are understood to consist of three sections:
 # common prefix, then middle section like _channelX_..._positionY_viewZ, and _timeT_zZ.tif postfix
@@ -290,7 +291,7 @@ for folder in folderFile:
 folderFile.close()
 
 wrkDirStr = os.path.dirname(inFileStr)
-outDirStr = outDir.getAbsolutePath() #TODO how is this done in the older?
+outDirStr = outDir.getAbsolutePath()
 
 Folders = []
 for folder in folders:
@@ -309,5 +310,11 @@ if globalHighestZ == -1:
     print("Found no usable data to process, stopping now.")
 else:
     print("\nThe largest z-slice index over all folders was found "+str(globalHighestZ))
+
+    outMIPDirStr = outDirStr+os.path.sep+"MIP"+os.path.sep
+    if outputMode.find("MIP") > -1 and not os.path.isdir(outMIPDirStr):
+        print("Creating MIP output folder: "+outMIPDirStr)
+        os.makedirs(outMIPDirStr)
+
     for F in Folders:
         F.run()
